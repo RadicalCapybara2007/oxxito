@@ -1,5 +1,6 @@
 package com.oxxito.controller;
 
+import com.oxxito.dto.ProductoDto;
 import com.oxxito.model.Producto;
 import com.oxxito.service.ProductoService;
 import com.oxxito.exception.NotFoundProduct;
@@ -8,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException.NotFound;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,15 +33,20 @@ public class ProductoController {
     }
 
     @PostMapping
-    public ResponseEntity<Producto> crear(@Valid @RequestBody Producto producto) {
+    public ResponseEntity<Producto> crear(@Valid @RequestBody ProductoDto productoDto) {
+        Producto producto = new Producto();
+        producto.setNombre(productoDto.getNombre());
+        producto.setPrecio(productoDto.getPrecio());
         return new ResponseEntity<>(service.guardar(producto), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Producto> actualizar(@PathVariable String id, @Valid @RequestBody Producto producto) {
+    public ResponseEntity<Producto> actualizar(@PathVariable String id, @Valid @RequestBody ProductoDto productoDto) {
         Optional<Producto> existente = service.obtenerPorId(id);
         if (existente.isPresent()) {
-            producto.setId(id);
+            Producto producto = existente.get();
+            producto.setNombre(productoDto.getNombre());
+            producto.setPrecio(productoDto.getPrecio());
             return ResponseEntity.ok(service.guardar(producto));
         }
         return ResponseEntity.notFound().build();
