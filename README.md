@@ -207,12 +207,3 @@ docker run --rm -p 8080:8080 \
 
 `host.docker.internal` está disponible en Docker Desktop; en Linux configura la dirección del host que corresponda a tu red Docker. No expongas MongoDB ni SonarQube públicamente sin configurar autenticación, permisos y seguridad de red.
 
-## Estado respecto a la rúbrica
-
-| Área | Estado documentado |
-|---|---|
-| Microservicio REST y persistencia NoSQL | CRUD de productos con Spring Boot y MongoDB implementado. |
-| Validaciones y manejo de errores | Validación de nombre/precio requerido, respuesta `400` y excepción `404` para consulta por ID implementadas. Sin manejo específico de `409`. |
-| Pruebas | Hay pruebas unitarias del servicio y pruebas de controlador con `MockMvc` y mocks. No hay pruebas de integración con MongoDB. |
-| JaCoCo | Plugin y generación de reporte HTML/XML configurados. No hay umbral mínimo automático ni se afirma que la cobertura alcance 80%. |
-| SonarQube | Plugin Maven configurado; el análisis y el Quality Gate deben ejecutarse/verificarse en un servidor SonarQube. |
