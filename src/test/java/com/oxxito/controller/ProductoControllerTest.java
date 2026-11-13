@@ -14,11 +14,14 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.Arrays;
+import java.util.Optional;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ProductoControllerTest {
@@ -36,15 +39,42 @@ public class ProductoControllerTest {
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        
-        // Construimos MockMvc manualmente, esquivando el error de autoconfiguración
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
-                .setControllerAdvice(new GlobalExceptionHandler()) // Agregamos tu manejador de errores
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
 
     @Test
-    void crearProducto_Exito() throws Exception {
+    void listar() throws Exception {
+        Producto p1 = new Producto(); p1.setNombre("Gansito");
+        Producto p2 = new Producto(); p2.setNombre("Coca Cola");
+        when(service.obtenerTodos()).thenReturn(Arrays.asList(p1, p2));
+
+        mockMvc.perform(get("/api/productos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(2));
+    }
+
+    @Test
+    void obtenerExito() throws Exception {
+        Producto p = new Producto(); p.setId("1"); p.setNombre("A");
+        when(service.obtenerPorId("1")).thenReturn(Optional.of(p));
+
+        mockMvc.perform(get("/api/productos/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("A"));
+    }
+
+    @Test
+    void obtenerNoEncontrado() throws Exception {
+        when(service.obtenerPorId("99")).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/productos/99"))
+                .andExpect(status().isNotFound()); 
+    }
+
+    @Test
+    void crearExito() throws Exception {
         Producto producto = new Producto();
         producto.setNombre("Café Andatti");
         producto.setPrecio(25.50);
@@ -59,12 +89,46 @@ public class ProductoControllerTest {
     }
 
     @Test
-    void crearProducto_Invalido() throws Exception {
-        Producto productoInvalido = new Producto(); // Sin nombre y precio nulo
+    void crearInvalido() throws Exception {
+        Producto productoInvalido = new Producto(); 
         
         mockMvc.perform(post("/api/productos")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(productoInvalido)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void actualizarExito() throws Exception {
+        Producto existente = new Producto(); existente.setId("1");
+        Producto actualizado = new Producto(); actualizado.setNombre("Vikingo"); actualizado.setPrecio(20.0);
+        
+        when(service.obtenerPorId("1")).thenReturn(Optional.of(existente));
+        when(service.guardar(any(Producto.class))).thenReturn(actualizado);
+
+        mockMvc.perform(put("/api/productos/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(actualizado)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Vikingo"));
+    }
+
+    @Test
+    void actualizarNoEncontrado() throws Exception {
+        Producto actualizado = new Producto(); actualizado.setNombre("Nuevo"); actualizado.setPrecio(10.0);
+        when(service.obtenerPorId("99")).thenReturn(Optional.empty());
+
+        mockMvc.perform(put("/api/productos/99")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(actualizado)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void eliminar() throws Exception {
+        doNothing().when(service).eliminar("1");
+
+        mockMvc.perform(delete("/api/productos/1"))
+                .andExpect(status().isNoContent());
     }
 }
