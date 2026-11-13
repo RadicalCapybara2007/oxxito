@@ -2,11 +2,13 @@ package com.oxxito.controller;
 
 import com.oxxito.model.Producto;
 import com.oxxito.service.ProductoService;
+import com.oxxito.exception.NotFoundProduct;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException.NotFound;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,9 +27,9 @@ public class ProductoController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Producto> obtener(@PathVariable String id) {
-        Optional<Producto> producto = service.obtenerPorId(id);
-        return producto.map(ResponseEntity::ok)
-                       .orElseGet(() -> ResponseEntity.notFound().build());
+        Producto producto = service.obtenerPorId(id)
+                .orElseThrow(() -> new NotFoundProduct("Producto no encontrado con el id: " + id));
+        return ResponseEntity.ok(producto);
     }
 
     @PostMapping
